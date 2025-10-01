@@ -52,7 +52,6 @@ jobs:
           sleep 10
 
           docker ps -a
-          docker exec -it postgres psql -U postgres -d privileges -c "\dt"
           docker logs bonus_service --details
           docker logs ticket_service --tail 50
           docker logs flight_service --tail 50
