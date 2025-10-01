@@ -28,6 +28,8 @@ if (app.Environment.IsDevelopment())
 app.UseAuthorization();
 app.MapControllers();
 app.MapGet("/manage/health", () => Results.Ok(new { status = "Healthy", service = "TicketService" }));
+// Добавьте это для отладки
+app.MapGet("/", () => "Gateway Service is running! Go to /swagger for API documentation");
 // Ensure database is created and seeded
 using (var scope = app.Services.CreateScope())
 {
