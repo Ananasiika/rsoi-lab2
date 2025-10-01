@@ -50,6 +50,11 @@ jobs:
         run: |
           docker compose up -d
           sleep 30
+          docker logs postgres
+          ls -la postgres/init.sql
+
+          # Проверим содержимое init.sql
+          cat postgres/init.sql
           docker exec postgres psql -U postgres -c "\l"
           docker ps -a
           curl http://localhost:8080/manage/health
