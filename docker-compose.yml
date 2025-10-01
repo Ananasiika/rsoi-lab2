@@ -1,23 +1,17 @@
 services:
   postgres:
-    image: library/postgres:17
+    image: postgres:13
     container_name: postgres
-    restart: on-failure
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "postgres"
-      POSTGRES_DB: postgres
-    volumes:
-      - db-data:/var/lib/postgresql/data
-      - ./postgres/:/docker-entrypoint-initdb.d/
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
-
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d privileges"]
-      interval: 5s
-      timeout: 5s
-      retries: 15
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
       start_period: 10s
 
   bonus_service:
@@ -26,7 +20,9 @@ services:
       context: .  
       dockerfile: src/BonusService/Dockerfile  
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    restart: on-failure:3
     ports:
       - "8050:8050"
 
@@ -36,7 +32,8 @@ services:
       context: . 
       dockerfile: src/FlightService/Dockerfile  
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "8060:8060"
       
@@ -46,7 +43,8 @@ services:
       context: .  
       dockerfile: src/TicketService/Dockerfile 
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "8070:8070"
       
@@ -56,7 +54,8 @@ services:
       context: . 
       dockerfile: src/GatewayService/Dockerfile
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "8080:8080"
 

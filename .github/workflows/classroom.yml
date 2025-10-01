@@ -48,16 +48,20 @@ jobs:
       - name: Run containers
         timeout-minutes: 5
         run: |
-          docker compose up -d
+          docker-compose up postgres -d
+          watch -n 2 'docker-compose ps'
+          docker exec -it postgres psql -U postgres -c "
+          CREATE DATABASE IF NOT EXISTS privileges;
+          CREATE DATABASE IF NOT EXISTS tickets; 
+          CREATE DATABASE IF NOT EXISTS flights;
+          "
+          docker exec postgres psql -U postgres -d privileges -c "\dt"
+          docker exec postgres psql -U postgres -d tickets -c "\dt"
+          docker exec postgres psql -U postgres -d flights -c "\dt"
+          
+          docker-compose up -d
           sleep 20
-
           docker ps -a
-          docker exec postgres psql -U postgres -c "\l"
-          docker network ls
-          docker network inspect rsoi-lab2_default
-
-          # Проверьте IP адрес контейнера postgres
-          docker inspect postgres | grep IPAddress
           # docker compose logs ticket_service --tail 50
           # docker compose logs flight_service --tail 50
           # docker compose logs bonus_service --tail 50  
