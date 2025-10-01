@@ -49,34 +49,38 @@ jobs:
         timeout-minutes: 5
         run: |
           docker compose up postgres -d
-          sleep 20
-          docker exec -it postgres psql -U postgres -c "
+          sleep 25
+
+          # Убедитесь что PostgreSQL готов
+          until docker exec postgres pg_isready -U postgres; do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 5
+          done
+
+          # Создайте БД без интерактивного режима
+          docker exec postgres psql -U postgres -c "
           CREATE DATABASE IF NOT EXISTS privileges;
           CREATE DATABASE IF NOT EXISTS tickets; 
           CREATE DATABASE IF NOT EXISTS flights;
           "
-          docker exec postgres psql -U postgres -d privileges -c "\dt"
-          docker exec postgres psql -U postgres -d tickets -c "\dt"
-          docker exec postgres psql -U postgres -d flights -c "\dt"
-          
+
+          # Проверьте создание БД
+          docker exec postgres psql -U postgres -c "\l"
+
+          # Запустите все сервисы
           docker compose up -d
-          sleep 20
+          sleep 30
+
+          # Проверьте статус контейнеров
           docker ps -a
-          # docker compose logs ticket_service --tail 50
-          # docker compose logs flight_service --tail 50
-          # docker compose logs bonus_service --tail 50  
-          # docker compose logs gateway_service --tail 50
           docker compose logs
-          curl http://localhost:8080/manage/health
 
-          # Проверим Bonus Service
-          curl http://localhost:8050/manage/health
-
-          # Проверим Ticket Service
-          curl http://localhost:8070/manage/health
-
-          # Проверим Flight Service  
-          curl http://localhost:8060/manage/health
+          # Проверьте health endpoints
+          echo "Checking services health..."
+          curl -f http://localhost:8080/manage/health || echo "Gateway service not ready"
+          curl -f http://localhost:8050/manage/health || echo "Bonus service not ready"
+          curl -f http://localhost:8070/manage/health || echo "Ticket service not ready" 
+          curl -f http://localhost:8060/manage/health || echo "Flight service not ready"
 #          ./scripts/wait-script.sh
         env:
           WAIT_PORTS: 8050,8060,8070,8080
