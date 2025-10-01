@@ -49,7 +49,7 @@ jobs:
         timeout-minutes: 5
         run: |
           docker compose up -d
-          sleep 30
+          sleep 20
 
           docker ps -a
           docker exec postgres psql -U postgres -c "\l"
@@ -58,11 +58,11 @@ jobs:
 
           # Проверьте IP адрес контейнера postgres
           docker inspect postgres | grep IPAddress
-          docker compose logs bonus_service --details
-          docker compose logs ticket_service --tail 50
-          docker compose logs flight_service --tail 50
-          docker compose logs bonus_service --tail 50  
-          docker compose logs gateway_service --tail 50
+          # docker compose logs ticket_service --tail 50
+          # docker compose logs flight_service --tail 50
+          # docker compose logs bonus_service --tail 50  
+          # docker compose logs gateway_service --tail 50
+          docker compose logs
           curl http://localhost:8080/manage/health
 
           # Проверим Bonus Service
