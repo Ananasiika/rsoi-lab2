@@ -48,8 +48,8 @@ jobs:
       - name: Run containers
         timeout-minutes: 5
         run: |
-          docker-compose up postgres -d
-          watch -n 2 'docker-compose ps'
+          docker compose up postgres -d
+          sleep 20
           docker exec -it postgres psql -U postgres -c "
           CREATE DATABASE IF NOT EXISTS privileges;
           CREATE DATABASE IF NOT EXISTS tickets; 
@@ -59,7 +59,7 @@ jobs:
           docker exec postgres psql -U postgres -d tickets -c "\dt"
           docker exec postgres psql -U postgres -d flights -c "\dt"
           
-          docker-compose up -d
+          docker compose up -d
           sleep 20
           docker ps -a
           # docker compose logs ticket_service --tail 50
