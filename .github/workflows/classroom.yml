@@ -50,8 +50,7 @@ jobs:
         run: |
           docker compose up -d
           sleep 30
-          docker logs postgres
-          docker exec postgres psql -U postgres -c "\l"
+
           docker ps -a
           curl http://localhost:8080/manage/health
 
@@ -70,7 +69,7 @@ jobs:
           docker logs gateway_service --tail 50
 #          ./scripts/wait-script.sh
         env:
-          WAIT_PORTS: 8070,8060,8050,8080
+          WAIT_PORTS: 8050,8060,8070,8080
 
       - name: Run API Tests
         uses: matt-ball/newman-action@master
