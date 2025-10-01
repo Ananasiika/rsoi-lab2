@@ -11,7 +11,7 @@ services:
       - db-data:/var/lib/postgresql/data
       - ./postgres/:/docker-entrypoint-initdb.d/
     ports:
-      - "5433:5432"
+      - "5432:5432"
 
   bonus_service:
     container_name: bonus_service
