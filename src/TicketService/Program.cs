@@ -1,0 +1,38 @@
+using Microsoft.EntityFrameworkCore;
+using TicketService.Database;
+using TicketService.Interfaces;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// Database configuration
+builder.Services.AddDbContext<TicketDatabaseContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Services
+builder.Services.AddScoped<ITicketService, TicketService.Services.TicketService>();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseAuthorization();
+app.MapControllers();
+app.MapGet("/manage/health", () => Results.Ok(new { status = "Healthy", service = "TicketService" }));
+// Ensure database is created and seeded
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<TicketDatabaseContext>();
+    context.Database.Migrate();
+}
+
+app.Run();
