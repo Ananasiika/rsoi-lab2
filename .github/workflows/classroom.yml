@@ -49,6 +49,10 @@ jobs:
         timeout-minutes: 5
         run: |
           docker compose up -d
+          docker logs ticket_service
+          docker logs bonus_service  
+          docker logs flight_service
+          docker logs postgres
           ./scripts/wait-script.sh
         env:
           WAIT_PORTS: 8070,8060,8050,8080
