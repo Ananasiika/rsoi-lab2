@@ -52,6 +52,11 @@ jobs:
           sleep 10
 
           docker ps -a
+          docker network ls
+          docker network inspect rsoi-lab2_default
+
+          # Проверьте IP адрес контейнера postgres
+          docker inspect postgres | grep IPAddress
           docker logs bonus_service --details
           docker logs ticket_service --tail 50
           docker logs flight_service --tail 50

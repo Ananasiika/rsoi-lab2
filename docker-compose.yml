@@ -28,6 +28,9 @@ services:
       - postgres
     ports:
       - "8050:8050"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=privileges;Username=postgres;Password=postgres
   
   flight_service:
     container_name: flight_service
@@ -38,6 +41,9 @@ services:
       - postgres
     ports:
       - "8060:8060"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=privileges;Username=postgres;Password=postgres
   
   ticket_service:
     container_name: ticket_service
@@ -48,6 +54,9 @@ services:
       - postgres
     ports:
       - "8070:8070"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=privileges;Username=postgres;Password=postgres
   
   gateway_service:
     container_name: gateway_service
