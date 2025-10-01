@@ -52,6 +52,7 @@ jobs:
           sleep 10
 
           docker ps -a
+          docker exec postgres psql -U postgres -c "\l"
           docker network ls
           docker network inspect rsoi-lab2_default
 
