@@ -52,6 +52,13 @@ jobs:
           sleep 10
 
           docker ps -a
+
+          docker logs bonus_service --details
+          docker exec -it postgres psql -U postgres -d privileges -c "\dt"
+          docker logs ticket_service --tail 50
+          docker logs flight_service --tail 50
+          docker logs bonus_service --tail 50  
+          docker logs gateway_service --tail 50
           curl http://localhost:8080/manage/health
 
           # Проверим Bonus Service
@@ -62,11 +69,6 @@ jobs:
 
           # Проверим Flight Service  
           curl http://localhost:8060/manage/health
-          
-          docker logs ticket_service --tail 50
-          docker logs flight_service --tail 50
-          docker logs bonus_service --tail 50  
-          docker logs gateway_service --tail 50
 #          ./scripts/wait-script.sh
         env:
           WAIT_PORTS: 8050,8060,8070,8080
