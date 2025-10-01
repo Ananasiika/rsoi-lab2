@@ -1,16 +1,20 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+USER app
 WORKDIR /app
 EXPOSE 8050
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["BonusService.csproj", "./"]
-RUN dotnet restore "BonusService.csproj"
+COPY ["src/BonusService/BonusService.csproj", "src/BonusService/"]
+RUN dotnet restore "src/BonusService/BonusService.csproj"
 COPY . .
-RUN dotnet build "BonusService.csproj" -c Release -o /app/build
+WORKDIR "/src/src/BonusService"
+RUN dotnet build "BonusService.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "BonusService.csproj" -c Release -o /app/publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "BonusService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
