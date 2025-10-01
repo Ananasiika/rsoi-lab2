@@ -19,7 +19,7 @@ services:
         sleep 5
         psql -U postgres -c 'CREATE DATABASE tickets;'
         psql -U postgres -c 'CREATE DATABASE flights;' 
-        psql -U postgres -c 'CREATE DATABASE privileges;'
+        psql -U postgres -c 'CREATE DATABASE bonus;'
         wait
       "
 
