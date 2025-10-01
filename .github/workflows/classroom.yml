@@ -48,20 +48,9 @@ jobs:
       - name: Run containers
         timeout-minutes: 5
         run: |
-      
-          docker compose down -v
-
-           docker compose up -d postgres
-
-
-           sleep 5
-
-
-           docker exec postgres psql -U postgres -c "\l"
-
-
           docker compose up -d
           sleep 30
+          docker exec postgres psql -U postgres -c "\l"
           docker ps -a
           curl http://localhost:8080/manage/health
 
