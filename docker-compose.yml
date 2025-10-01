@@ -17,8 +17,8 @@ services:
   bonus_service:
     container_name: bonus_service
     build:
-      context: src
-      dockerfile: BonusService/Dockerfile
+      context: .  
+      dockerfile: src/BonusService/Dockerfile  
     depends_on:
       - postgres
     ports:
@@ -27,8 +27,8 @@ services:
   flight_service:
     container_name: flight_service
     build:
-      context: src
-      dockerfile: FlightService/Dockerfile
+      context: . 
+      dockerfile: src/FlightService/Dockerfile  
     depends_on:
       - postgres
     ports:
@@ -37,8 +37,8 @@ services:
   ticket_service:
     container_name: ticket_service
     build:
-      context: src
-      dockerfile: TicketService/Dockerfile
+      context: .  
+      dockerfile: src/TicketService/Dockerfile 
     depends_on:
       - postgres
     ports:
@@ -47,8 +47,8 @@ services:
   gateway_service:
     container_name: gateway_service
     build:
-      context: src
-      dockerfile: GatewayService/Dockerfile
+      context: . 
+      dockerfile: src/GatewayService/Dockerfile
     depends_on:
       - postgres
     ports:
