@@ -13,6 +13,15 @@ services:
       - ./postgres/20-create-database.sql:/docker-entrypoint-initdb.d/20-create-database.sql
     ports:
       - "5432:5432"
+    command: >
+      sh -c "
+        docker-entrypoint.sh postgres &
+        sleep 5
+        psql -U postgres -c 'CREATE DATABASE tickets;'
+        psql -U postgres -c 'CREATE DATABASE flights;' 
+        psql -U postgres -c 'CREATE DATABASE privileges;'
+        wait
+      "
 
   bonus_service:
     container_name: bonus_service
