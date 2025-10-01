@@ -49,11 +49,31 @@ jobs:
         timeout-minutes: 5
         run: |
           docker compose up -d
-          docker logs ticket_service
-          docker logs bonus_service  
-          docker logs flight_service
-          docker logs postgres
           docker ps -a
+          curl http://localhost:8080/manage/health
+
+          # Проверим Ticket Service
+          curl http://localhost:8070/manage/health
+
+          # Проверим Flight Service  
+          curl http://localhost:8060/manage/health
+
+          # Проверим Bonus Service
+          curl http://localhost:8050/manage/health
+          # Проверим логи TicketService
+          docker logs ticket_service
+
+          # Проверим логи FlightService
+          docker logs flight_service
+
+          # Проверим логи BonusService
+          docker logs bonus_service
+
+          # Проверим логи GatewayService
+          docker logs gateway_service
+
+          # Проверим логи PostgreSQL
+          docker logs postgres
 #          ./scripts/wait-script.sh
         env:
           WAIT_PORTS: 8070,8060,8050,8080
