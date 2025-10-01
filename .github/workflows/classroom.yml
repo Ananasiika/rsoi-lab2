@@ -52,14 +52,8 @@ jobs:
           sleep 10
 
           docker ps -a
-
-          docker network ls
-          docker network inspect <network_name>
-
-          # Проверьте доступность PostgreSQL из контейнера bonus_service
-          docker run --rm --network rsoi-lab2_default postgres:13 pg_isready -h postgres -p 5432 -U postgres
-          docker logs bonus_service --details
           docker exec -it postgres psql -U postgres -d privileges -c "\dt"
+          docker logs bonus_service --details
           docker logs ticket_service --tail 50
           docker logs flight_service --tail 50
           docker logs bonus_service --tail 50  
