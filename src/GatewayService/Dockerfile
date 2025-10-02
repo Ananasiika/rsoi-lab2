@@ -6,10 +6,13 @@ EXPOSE 8080
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["src/GatewayService/GatewayService.csproj", "src/GatewayService/"]
-RUN dotnet restore "src/GatewayService/GatewayService.csproj"
+
+# ИСПРАВЛЕННЫЕ ПУТИ - убрал префикс src/
+COPY ["GatewayService.csproj", "./"]
+RUN dotnet restore "GatewayService.csproj"
+
 COPY . .
-WORKDIR "/src/src/GatewayService"
+WORKDIR "/src"
 RUN dotnet build "GatewayService.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
