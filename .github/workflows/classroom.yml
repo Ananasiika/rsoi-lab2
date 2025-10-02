@@ -58,51 +58,114 @@ jobs:
       - name: Check Tests
         timeout-minutes: 5
         run: |
-        
-          # Check if databases are initialized
-          docker exec postgres psql -U postgres -d flights -c "SELECT * FROM flight;"
-          docker exec postgres psql -U postgres -d tickets -c "SELECT * FROM ticket;"
-          docker exec postgres psql -U postgres -d privileges -c "SELECT * FROM privilege;"
-          docker compose logs 
-          # Test Gateway endpoints
-          echo "3. Testing Gateway endpoints:"
+          echo "=== INTEGRATION TESTS START ==="
           
-          # 3.1 Get flights via Gateway
-          echo "3.1 Get flights via Gateway:"
-          curl -v "http://localhost:8080/api/v1/flights?page=1&size=10" || echo "FAILED"
+          # 1. Check if databases are initialized
+          echo ""
+          echo "1. CHECKING DATABASES:"
+          echo "======================"
           
-          # 3.2 Get privilege info
-          echo "3.2 Get privilege info:"
-          curl -v -H "X-User-Name: Test Max" "http://localhost:8080/api/v1/privilege" || echo "FAILED"
+          echo "1.1 Flights database:"
+          docker exec postgres psql -U postgres -d flights -c "SELECT COUNT(*) as flight_count, 'flights' as table_name FROM flight UNION ALL SELECT COUNT(*), 'airports' FROM airport;" || echo "FLIGHTS DB QUERY FAILED"
           
-          # 3.3 Purchase ticket (main test)
-          echo "3.3 Purchase ticket:"
-          curl -v -X POST \
-            -H "X-User-Name: Test Max" \
-            -H "Content-Type: application/json" \
-            -d '{"flightNumber":"AFL031","price":1500,"paidFromBalance":false}' \
-            "http://localhost:8080/api/v1/tickets" || echo "FAILED"
+          echo ""
+          echo "1.2 Tickets database:"
+          docker exec postgres psql -U postgres -d tickets -c "SELECT COUNT(*) as ticket_count FROM ticket;" || echo "TICKETS DB QUERY FAILED"
           
-          # Test direct service endpoints
-          echo "4. Testing direct service endpoints:"
+          echo ""
+          echo "1.3 Privileges database:"
+          docker exec postgres psql -U postgres -d privileges -c "SELECT COUNT(*) as privilege_count, 'privileges' as table_name FROM privilege UNION ALL SELECT COUNT(*), 'privilege_history' FROM privilege_history;" || echo "PRIVILEGES DB QUERY FAILED"
           
-          # Flight Service
-          echo "4.1 Flight Service direct:"
-          curl -v "http://localhost:8060/api/v1/flights?page=1&size=10" || echo "FAILED"
+          # 2. Test Gateway endpoints
+          echo ""
+          echo "2. TESTING GATEWAY ENDPOINTS:"
+          echo "============================="
           
-          # Ticket Service
-          echo "4.2 Ticket Service - get tickets:"
-          curl -v -H "X-User-Name: Test Max" "http://localhost:8070/api/v1/tickets" || echo "FAILED"
+          # 2.1 Get flights via Gateway
+          echo ""
+          echo "2.1 Testing GET /api/v1/flights:"
+          echo "--------------------------------"
+          response=$(curl -s -w "HTTP_STATUS:%{http_code}" "http://localhost:8080/api/v1/flights?page=1&size=10")
+          http_status=$(echo "$response" | grep -o 'HTTP_STATUS:[0-9]*' | cut -d':' -f2)
+          body=$(echo "$response" | sed 's/HTTP_STATUS:[0-9]*$//')
           
-          # Bonus Service  
-          echo "4.3 Bonus Service - get privilege:"
-          curl -v -H "X-User-Name: Test Max" "http://localhost:8050/api/v1/privilege" || echo "FAILED"
+          echo "Status: $http_status"
+          if [ "$http_status" -eq 200 ]; then
+              echo "✅ SUCCESS: Flights endpoint working"
+              echo "Response preview: $(echo "$body" | head -c 200)"
+          else
+              echo "❌ FAILED: Flights endpoint returned $http_status"
+              echo "Full response: $body"
+              
+              # Show logs if failed
+              echo ""
+              echo "📋 GATEWAY LOGS (last 30 lines):"
+              echo "================================="
+              docker compose logs gateway --tail=30 2>/dev/null || docker compose logs --tail=30 | grep -i gateway || echo "Cannot get gateway-specific logs"
+              
+              echo ""
+              echo "📋 FLIGHT SERVICE LOGS (last 20 lines):"
+              echo "======================================="
+              docker compose logs flight-service --tail=20 2>/dev/null || docker compose logs --tail=20 | grep -i flight || echo "Cannot get flight-service logs"
+          fi
           
-          echo "=== Database check ==="
-          # Check if databases are initialized
-          docker exec postgres psql -U postgres -d flights -c "SELECT * FROM flight;"
-          docker exec postgres psql -U postgres -d tickets -c "SELECT * FROM ticket;"
-          docker exec postgres psql -U postgres -d privileges -c "SELECT * FROM privilege;"
+          # 2.2 Get privilege info
+          echo ""
+          echo "2.2 Testing GET /api/v1/privilege:"
+          echo "----------------------------------"
+          response=$(curl -s -w "HTTP_STATUS:%{http_code}" -H "X-User-Name: Test Max" "http://localhost:8080/api/v1/privilege")
+          http_status=$(echo "$response" | grep -o 'HTTP_STATUS:[0-9]*' | cut -d':' -f2)
+          body=$(echo "$response" | sed 's/HTTP_STATUS:[0-9]*$//')
+          
+          echo "Status: $http_status"
+          if [ "$http_status" -eq 200 ]; then
+              echo "✅ SUCCESS: Privilege endpoint working"
+              echo "Response preview: $(echo "$body" | head -c 200)"
+          else
+              echo "❌ FAILED: Privilege endpoint returned $http_status"
+              echo "Full response: $body"
+              
+              # Show logs if failed
+              echo ""
+              echo "📋 BONUS SERVICE LOGS (last 20 lines):"
+              echo "======================================"
+              docker compose logs bonus-service --tail=20 2>/dev/null || docker compose logs --tail=20 | grep -i bonus || echo "Cannot get bonus-service logs"
+          fi
+          
+          # 2.3 Test tickets endpoint
+          echo ""
+          echo "2.3 Testing GET /api/v1/tickets:"
+          echo "--------------------------------"
+          response=$(curl -s -w "HTTP_STATUS:%{http_code}" -H "X-User-Name: Test Max" "http://localhost:8080/api/v1/tickets")
+          http_status=$(echo "$response" | grep -o 'HTTP_STATUS:[0-9]*' | cut -d':' -f2)
+          
+          echo "Status: $http_status"
+          if [ "$http_status" -eq 200 ]; then
+              echo "✅ SUCCESS: Tickets endpoint working"
+          else
+              echo "❌ FAILED: Tickets endpoint returned $http_status"
+              
+              echo ""
+              echo "📋 TICKETS SERVICE LOGS (last 20 lines):"
+              echo "========================================"
+              docker compose logs tickets-service --tail=20 2>/dev/null || docker compose logs --tail=20 | grep -i ticket || echo "Cannot get tickets-service logs"
+          fi
+          
+          # 3. Show error logs if any endpoint failed
+          if [ "$http_status" -ne 200 ] || [ "$(echo "$response" | grep -o 'HTTP_STATUS:[0-9]*' | cut -d':' -f2)" -ne 200 ]; then
+              echo ""
+              echo "🚨 ERROR DETECTED - SHOWING ALL RECENT LOGS:"
+              echo "============================================"
+              docker compose logs --tail=50
+              
+              echo ""
+              echo "🔍 CHECKING CONTAINER STATUS:"
+              echo "============================="
+              docker compose ps
+          fi
+          
+          echo ""
+          echo "=== INTEGRATION TESTS COMPLETE ==="
 
       - name: Run API Tests
         uses: matt-ball/newman-action@master
