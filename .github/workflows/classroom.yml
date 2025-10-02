@@ -58,6 +58,12 @@ jobs:
       - name: Check Tests
         timeout-minutes: 5
         run: |
+        
+          # Check if databases are initialized
+          docker exec postgres psql -U postgres -d flights -c "SELECT * FROM flight;"
+          docker exec postgres psql -U postgres -d tickets -c "SELECT * FROM ticket;"
+          docker exec postgres psql -U postgres -d privileges -c "SELECT * FROM privilege;"
+          docker compose logs 
           # Test Gateway endpoints
           echo "3. Testing Gateway endpoints:"
           
