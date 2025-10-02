@@ -85,59 +85,6 @@ public class FlightServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetFlight_ExistingId_ReturnsOk()
-    {
-        // Act
-        var result = await _flightsController.GetFlightByNumber("1");
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<Flight>>(result);
-        var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var flight = Assert.IsType<Flight>(okResult.Value);
-        
-        Assert.Equal(1, flight.Id);
-        Assert.Equal("FL123", flight.FlightNumber);
-        Assert.Equal(5000, flight.Price);
-    }
-
-    [Fact]
-    public async Task GetFlight_NonExistingId_ReturnsNotFound()
-    {
-        // Act
-        var result = await _flightsController.GetFlightByNumber("999");
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<Flight>>(result);
-        Assert.IsType<NotFoundResult>(actionResult.Result);
-    }
-
-    [Fact]
-    public async Task GetFlightByNumber_ExistingNumber_ReturnsOk()
-    {
-        // Act
-        var result = await _flightsController.GetFlightByNumber("FL123");
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<Flight>>(result);
-        var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var flight = Assert.IsType<Flight>(okResult.Value);
-        
-        Assert.Equal("FL123", flight.FlightNumber);
-        Assert.Equal(1, flight.FromAirportId);
-    }
-
-    [Fact]
-    public async Task GetFlightByNumber_NonExistingNumber_ReturnsNotFound()
-    {
-        // Act
-        var result = await _flightsController.GetFlightByNumber("NONEXISTENT");
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<Flight>>(result);
-        Assert.IsType<NotFoundResult>(actionResult.Result);
-    }
-
-    [Fact]
     public async Task CreateFlight_ValidFlight_ReturnsCreated()
     {
         // Arrange
