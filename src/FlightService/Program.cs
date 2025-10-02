@@ -7,17 +7,14 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-    });
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Database configuration
-builder.Services.AddDbContext<FlightDatabaseContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<FlightDatabaseContext>(opt =>
+            opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")),
+                ServiceLifetime.Transient, ServiceLifetime.Transient);
 
 // Services
 builder.Services.AddScoped<IFlightService, FlightService.Services.FlightService>();
@@ -26,21 +23,14 @@ builder.Services.AddScoped<IAirportService, AirportService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseAuthorization();
 app.MapControllers();
-app.MapGet("/manage/health", () => Results.Ok(new { status = "Healthy", service = "FlightService" }));
-// Ensure database is created and seeded
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<FlightDatabaseContext>();
-    context.Database.Migrate();
-}
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;

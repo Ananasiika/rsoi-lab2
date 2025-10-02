@@ -11,7 +11,8 @@ builder.Services.AddSwaggerGen();
 
 // Database configuration
 builder.Services.AddDbContext<TicketDatabaseContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")),
+                ServiceLifetime.Transient, ServiceLifetime.Transient);
 
 // Services
 builder.Services.AddScoped<ITicketService, TicketService.Services.TicketService>();
@@ -19,22 +20,13 @@ builder.Services.AddScoped<ITicketService, TicketService.Services.TicketService>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseAuthorization();
-app.MapControllers();
-app.MapGet("/manage/health", () => Results.Ok(new { status = "Healthy", service = "TicketService" }));
-// Добавьте это для отладки
-app.MapGet("/", () => "Gateway Service is running! Go to /swagger for API documentation");
-// Ensure database is created and seeded
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<TicketDatabaseContext>();
-    context.Database.Migrate();
-}
+app.MapControllers()
 
 app.Run();

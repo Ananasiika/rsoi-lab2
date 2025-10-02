@@ -6,15 +6,15 @@ EXPOSE 8060
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["src/FlightService/FlightService.csproj", "src/FlightService/"]
-RUN dotnet restore "src/FlightService/FlightService.csproj"
+COPY ["FlightService/FlightService.csproj", "FlightService/"]
+RUN dotnet restore "./FlightService/./FlightService.csproj"
 COPY . .
-WORKDIR "/src/src/FlightService"
-RUN dotnet build "FlightService.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/FlightService"
+RUN dotnet build "./FlightService.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "FlightService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./FlightService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app

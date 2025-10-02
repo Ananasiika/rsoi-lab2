@@ -14,6 +14,11 @@ public class FlightsController : ControllerBase
     {
         _flightService = flightService;
     }
+    [HttpGet("manage/health")]
+    public IActionResult Health()
+    {
+        return Ok();
+    }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Flight>>> GetFlights([FromQuery] int page = 1, [FromQuery] int size = 10)

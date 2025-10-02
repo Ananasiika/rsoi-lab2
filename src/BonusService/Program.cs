@@ -10,30 +10,25 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Database configuration
-builder.Services.AddDbContext<BonusDatabaseContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddDbContext<BonusDatabaseContext>(opt =>
+            opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")),
+                ServiceLifetime.Transient, ServiceLifetime.Transient);
 // Services
 builder.Services.AddScoped<IPrivilegeService, PrivilegeService>();
+
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseAuthorization();
 app.MapControllers();
-app.MapGet("/manage/health", () => Results.Ok(new { status = "Healthy", service = "BonusService" }));
-// Apply migrations
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<BonusDatabaseContext>();
-    context.Database.Migrate();
-}
 
 app.Run();

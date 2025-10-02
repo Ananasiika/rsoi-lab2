@@ -15,6 +15,12 @@ public class PrivilegeController : ControllerBase
         _privilegeService = privilegeService;
     }
 
+    [HttpGet("manage/health")]
+    public IActionResult Health()
+    {
+        return Ok();
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetPrivilegeInfo([FromHeader(Name = "X-User-Name")] string username)
     {
