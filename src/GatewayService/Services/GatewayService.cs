@@ -30,15 +30,17 @@ public class GatewayService : IGatewayService
 
     public async Task<UserInfoResponse> GetUserInfoAsync(string username)
     {
-        var ticketsTask = _ticketClient.GetUserTicketsAsync(username);
-        var privilegeTask = _bonusClient.GetPrivilegeShortInfoAsync(username);
-
-        await Task.WhenAll(ticketsTask, privilegeTask);
+        var tickets = await _ticketClient.GetUserTicketsAsync(username);
+        var privilege = await _bonusClient.GetPrivilegeShortInfoAsync(username);
 
         return new UserInfoResponse
         {
-            Tickets = await ticketsTask,
-            Privilege = await privilegeTask ?? new PrivilegeShortInfo()
+            Tickets = tickets,
+            Privilege = new UserPrivilegeInfo
+            {
+                Balance = privilege?.Balance ?? 0,
+                Status = privilege?.Status ?? "BRONZE"
+            }
         };
     }
 
@@ -113,7 +115,7 @@ public class GatewayService : IGatewayService
 
     public async Task<TicketPurchaseResponse?> PurchaseTicketAsync(string username, TicketPurchaseRequest request)
     {
-        // 1. Проверяем существование рейса
+        // 1. Получить информацию о полете
         var flight = await _flightClient.GetFlightByNumberAsync(request.FlightNumber);
         if (flight == null)
         {
@@ -121,39 +123,32 @@ public class GatewayService : IGatewayService
             return null;
         }
 
-        // 2. Вычисляем оплату бонусами и деньгами
-        var privilegeInfo = await _bonusClient.GetPrivilegeInfoAsync(username);
-        int paidByBonuses = 0;
-        int paidByMoney = request.Price;
-        int bonusToAdd = 0;
+        // 2. Получить информацию о бонусах
+        var privilegeInfo = await _bonusClient.GetPrivilegeShortInfoAsync(username);
+    
+        // 3. Рассчитать суммы оплаты и бонусы
+        int paidByMoney, paidByBonuses, bonusToAdd;
+        CalculatePaidAmounts(request, privilegeInfo, out paidByBonuses, out paidByMoney, out bonusToAdd);
 
-        if (request.PaidFromBalance && privilegeInfo != null)
-        {
-            paidByBonuses = Math.Min(privilegeInfo.Balance, request.Price);
-            paidByMoney = request.Price - paidByBonuses;
-        }
-        else
-        {
-            bonusToAdd = (int)(request.Price * 0.1);
-        }
-
-        // 3. Покупаем билет
-        var purchaseResponse = await _ticketClient.PurchaseTicketAsync(username, request);
-        if (purchaseResponse == null)
+        // 4. Создать запрос на покупку билета
+        var ticketResponse = await _ticketClient.PurchaseTicketAsync(username, request);
+        if (ticketResponse == null)
         {
             return null;
         }
 
-        // 4. Обновляем бонусный счет
-        await _bonusClient.UpdatePrivilegeAfterPurchase(username, request, purchaseResponse.TicketUid, paidByBonuses, paidByMoney, bonusToAdd);
+        // 5. Обновить бонусную систему
+        await _bonusClient.UpdatePrivilegeAfterPurchase(
+            username, request, ticketResponse.TicketUid, 
+            paidByBonuses, paidByMoney, bonusToAdd);
 
-        // 5. Получаем актуальную информацию о привилегиях
+        // 6. Получить обновленную информацию о бонусах
         var updatedPrivilege = await _bonusClient.GetPrivilegeShortInfoAsync(username);
 
-        // 6. Формируем полный ответ
+        // 7. Вернуть ответ в ожидаемом формате
         return new TicketPurchaseResponse
         {
-            TicketUid = purchaseResponse.TicketUid,
+            TicketUid = ticketResponse.TicketUid,
             FlightNumber = flight.FlightNumber,
             FromAirport = flight.FromAirport.Name,
             ToAirport = flight.ToAirport.Name,
@@ -184,5 +179,30 @@ public class GatewayService : IGatewayService
     public Task<PrivilegeInfoResponse?> GetPrivilegeInfoAsync(string username)
     {
         return _bonusClient.GetPrivilegeInfoAsync(username);
+    }
+    
+    private int CalculateBonusToAdd(int price, string status)
+    {
+        // 10% от стоимости билета
+        return (int)(price * 0.1);
+    }
+
+    private int CalculatePaidAmounts(TicketPurchaseRequest request, PrivilegeShortInfo? privilege, out int paidByBonuses, out int paidByMoney, out int bonusToAdd)
+    {
+        paidByBonuses = 0;
+        paidByMoney = request.Price;
+        bonusToAdd = 0;
+
+        if (request.PaidFromBalance && privilege != null)
+        {
+            // Логика оплаты бонусами
+            paidByBonuses = Math.Min(privilege.Balance, request.Price);
+            paidByMoney = request.Price - paidByBonuses;
+        }
+
+        // Начисление бонусов (10% от стоимости)
+        bonusToAdd = CalculateBonusToAdd(request.Price, privilege?.Status ?? "BRONZE");
+    
+        return paidByMoney;
     }
 }
