@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace FlightService.Models;
 
@@ -22,6 +23,9 @@ public class Airport
     public string Country { get; set; } = string.Empty;
         
     // Навигационные свойства
-    public virtual ICollection<Flight> DepartureFlights { get; set; } = new List<Flight>();
-    public virtual ICollection<Flight> ArrivalFlights { get; set; } = new List<Flight>();
+    [JsonIgnore]
+    public virtual ICollection<Flight> DepartureFlights { get; set; }
+
+    [JsonIgnore]
+    public virtual ICollection<Flight> ArrivalFlights { get; set; }
 }

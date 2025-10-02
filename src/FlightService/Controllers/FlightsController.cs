@@ -35,8 +35,8 @@ public class FlightsController : ControllerBase
         var flightDtos = flights.Select(f => new FlightDto
         {
             FlightNumber = f.FlightNumber,
-            FromAirport = f.FromAirport?.Name ?? "Unknown",
-            ToAirport = f.ToAirport?.Name ?? "Unknown", 
+            FromAirport = f.FromAirport,
+            ToAirport = f.ToAirport, 
             Date = f.DateTime,
             Price = f.Price
         }).ToList();
@@ -64,8 +64,8 @@ public class FlightsController : ControllerBase
         var flightDto = new FlightDto
         {
             FlightNumber = flight.FlightNumber,
-            FromAirport = flight.FromAirport?.Name ?? "Unknown",
-            ToAirport = flight.ToAirport?.Name ?? "Unknown",
+            FromAirport = flight.FromAirport,
+            ToAirport = flight.ToAirport,
             Date = flight.DateTime,
             Price = flight.Price
         };

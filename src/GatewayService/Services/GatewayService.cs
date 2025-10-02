@@ -62,8 +62,8 @@ public class GatewayService : IGatewayService
                 {
                     TicketUid = ticket.TicketUid,
                     FlightNumber = ticket.FlightNumber,
-                    FromAirport = $"{flight.FromAirport} {flight.FromAirport}",
-                    ToAirport = $"{flight.ToAirport} {flight.ToAirport}",
+                    FromAirport = $"{flight.FromAirport.City} {flight.FromAirport.Name}",
+                    ToAirport = $"{flight.ToAirport.City} {flight.ToAirport.Name}",
                     Date = flight.Date,
                     Price = ticket.Price,
                     Status = ticket.Status
@@ -105,8 +105,8 @@ public class GatewayService : IGatewayService
         {
             TicketUid = ticket.TicketUid,
             FlightNumber = ticket.FlightNumber,
-            FromAirport = $"{flight.FromAirport} {flight.FromAirport}",
-            ToAirport = $"{flight.ToAirport} {flight.ToAirport}",
+            FromAirport = $"{flight.FromAirport.City} {flight.FromAirport.Name}",
+            ToAirport = $"{flight.ToAirport.City} {flight.ToAirport.Name}",
             Date = flight.Date,
             Price = ticket.Price,
             Status = ticket.Status
@@ -163,8 +163,8 @@ public class GatewayService : IGatewayService
             {
                 TicketUid = ticketResponse.TicketUid,
                 FlightNumber = flight.FlightNumber,
-                FromAirport = flight.FromAirport,
-                ToAirport = flight.ToAirport,
+                FromAirport = flight.FromAirport.City + " " + flight.FromAirport.Name,
+                ToAirport = flight.ToAirport.City + " " + flight.ToAirport.Name,
                 Date = flight.Date,
                 Price = request.Price,
                 PaidByMoney = paidByMoney,
