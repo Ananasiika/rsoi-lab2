@@ -30,7 +30,21 @@ public class FlightsController : ControllerBase
         try
         {
             var flights = await _gatewayService.GetFlightsAsync(page, size);
-            return Ok(flights);
+            var result = new PaginationResponse<FlightResponse>
+            {
+                Page = flights.Page,
+                PageSize = flights.PageSize,
+                TotalElements = flights.TotalElements,
+                Items = flights.Items.Select(f => new FlightResponse
+                {
+                    Date = f.Date,
+                    FlightNumber = f.FlightNumber,
+                    FromAirport = f.FromAirport.City + " " + f.FromAirport.Name,
+                    ToAirport = f.ToAirport.City + " " + f.ToAirport.Name,
+                    Price = f.Price,
+                }).ToList()
+            };
+            return Ok(result);
         }
         catch (Exception ex)
         {

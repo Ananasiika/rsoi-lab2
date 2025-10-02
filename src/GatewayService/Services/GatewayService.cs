@@ -31,11 +31,48 @@ public class GatewayService : IGatewayService
     public async Task<UserInfoResponse> GetUserInfoAsync(string username)
     {
         var tickets = await _ticketClient.GetUserTicketsAsync(username);
+        var result = new List<TicketResponse>();
+    
+        foreach (var ticket in tickets)
+        {
+            // 2. Для каждого билета получаем информацию о рейсе из FlightService
+            var flight = await _flightClient.GetFlightByNumberAsync(ticket.FlightNumber);
+        
+            if (flight != null)
+            {
+                var ticketResponse = new TicketResponse
+                {
+                    TicketUid = ticket.TicketUid,
+                    FlightNumber = ticket.FlightNumber,
+                    FromAirport = $"{flight.FromAirport.City} {flight.FromAirport.Name}",
+                    ToAirport = $"{flight.ToAirport.City} {flight.ToAirport.Name}",
+                    Date = flight.Date,
+                    Price = ticket.Price,
+                    Status = ticket.Status
+                };
+                result.Add(ticketResponse);
+            }
+            else
+            {
+                // Если информация о рейсе не найдена, возвращаем базовую информацию
+                var ticketResponse = new TicketResponse
+                {
+                    TicketUid = ticket.TicketUid,
+                    FlightNumber = ticket.FlightNumber,
+                    FromAirport = "Unknown",
+                    ToAirport = "Unknown",
+                    Date = DateTime.MinValue,
+                    Price = ticket.Price,
+                    Status = ticket.Status
+                };
+                result.Add(ticketResponse);
+            }
+        }
         var privilege = await _bonusClient.GetPrivilegeShortInfoAsync(username);
 
         return new UserInfoResponse
         {
-            Tickets = tickets,
+            Tickets = result,
             Privilege = new PrivilegeShortInfo
             {
                 Balance = privilege?.Balance ?? 0,
