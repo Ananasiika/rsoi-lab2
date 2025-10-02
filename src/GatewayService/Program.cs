@@ -17,21 +17,22 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Register HTTP clients
+// Register HTTP clients
 builder.Services.AddHttpClient<IFlightClient, FlightClient>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["Services:FlightService"] ?? "http://localhost:8060");
+    client.BaseAddress = new Uri(builder.Configuration["Services:FlightService"] ?? "http://flight_service:8060");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
 builder.Services.AddHttpClient<IBonusClient, BonusClient>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["Services:BonusService"] ?? "http://localhost:8050");
+    client.BaseAddress = new Uri(builder.Configuration["Services:BonusService"] ?? "http://bonus_service:8050");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
 builder.Services.AddHttpClient<ITicketClient, TicketClient>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["Services:TicketService"] ?? "http://localhost:8070");
+    client.BaseAddress = new Uri(builder.Configuration["Services:TicketService"] ?? "http://ticket_service:8070");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
