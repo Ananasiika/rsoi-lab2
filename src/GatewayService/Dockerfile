@@ -7,12 +7,11 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# ИСПРАВЛЕННЫЕ ПУТИ - убрал префикс src/
-COPY ["GatewayService.csproj", "./"]
-RUN dotnet restore "GatewayService.csproj"
+COPY ["GatewayService/GatewayService.csproj", "GatewayService/"]
+RUN dotnet restore "GatewayService/GatewayService.csproj"
 
 COPY . .
-WORKDIR "/src"
+WORKDIR "/src/GatewayService"
 RUN dotnet build "GatewayService.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
