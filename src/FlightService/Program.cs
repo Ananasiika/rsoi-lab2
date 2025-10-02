@@ -44,4 +44,5 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred seeding the DB.");
     }
 }
+app.MapGet("/manage/health", () => Results.Ok(new { status = "Healthy", service = "flight" }));
 app.Run();

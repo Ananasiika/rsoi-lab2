@@ -28,5 +28,5 @@ var app = builder.Build();
 
 app.UseAuthorization();
 app.MapControllers();
-
+app.MapGet("/manage/health", () => Results.Ok(new { status = "Healthy", service = "ticket" }));
 app.Run();
