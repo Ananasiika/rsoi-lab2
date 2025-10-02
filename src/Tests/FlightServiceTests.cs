@@ -88,7 +88,7 @@ public class FlightServiceTests : IDisposable
     public async Task GetFlight_ExistingId_ReturnsOk()
     {
         // Act
-        var result = await _flightsController.GetFlight(1);
+        var result = await _flightsController.GetFlightByNumber("1");
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<Flight>>(result);
@@ -104,7 +104,7 @@ public class FlightServiceTests : IDisposable
     public async Task GetFlight_NonExistingId_ReturnsNotFound()
     {
         // Act
-        var result = await _flightsController.GetFlight(999);
+        var result = await _flightsController.GetFlightByNumber("999");
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<Flight>>(result);

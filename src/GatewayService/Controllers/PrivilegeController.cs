@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using GatewayService.Models;
 using GatewayService.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,12 +29,14 @@ public class PrivilegeController : ControllerBase
         try
         {
             var privilegeInfo = await _gatewayService.GetPrivilegeInfoAsync(username);
-            if (privilegeInfo == null)
+        
+            // ВСЕГДА возвращаем 200, даже если пользователь новый
+            return Ok(privilegeInfo ?? new PrivilegeInfoResponse
             {
-                return NotFound(new { message = "Privilege info not found" });
-            }
-
-            return Ok(privilegeInfo);
+                Balance = 0,
+                Status = "BRONZE", 
+                History = new List<BalanceHistory>()
+            });
         }
         catch (Exception ex)
         {

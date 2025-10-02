@@ -21,7 +21,7 @@ public class FlightsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Flight>>> GetFlights([FromQuery] int page = 1, [FromQuery] int size = 10)
+    public async Task<ActionResult<PaginationResponse<FlightDto>>> GetFlights([FromQuery] int page = 1, [FromQuery] int size = 10)
     {
         if (page < 1 || size < 1)
         {
@@ -29,39 +29,48 @@ public class FlightsController : ControllerBase
         }
 
         var flights = await _flightService.GetAllFlightsAsync(page, size);
-        var totalCount = await _flightService.GetTotalCountAsync(); // Нужно добавить этот метод в сервис
+        var totalCount = await _flightService.GetTotalCountAsync();
     
-        var response = new PaginationResponse<Flight>
+        // Преобразуем Flight в FlightDto
+        var flightDtos = flights.Select(f => new FlightDto
+        {
+            FlightNumber = f.FlightNumber,
+            FromAirport = f.FromAirport?.Name ?? "Unknown",
+            ToAirport = f.ToAirport?.Name ?? "Unknown", 
+            Date = f.DateTime,
+            Price = f.Price
+        }).ToList();
+    
+        var response = new PaginationResponse<FlightDto>
         {
             Page = page,
             PageSize = size,
-            TotalCount = totalCount,
-            Items = flights.ToList()
+            TotalElements = totalCount, // Измените на TotalElements
+            Items = flightDtos
         };
     
         return Ok(response);
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Flight>> GetFlight(int id)
-    {
-        var flight = await _flightService.GetFlightByIdAsync(id);
-        if (flight == null)
-        {
-            return NotFound();
-        }
-        return Ok(flight);
-    }
-
     [HttpGet("number/{flightNumber}")]
-    public async Task<ActionResult<Flight>> GetFlightByNumber(string flightNumber)
+    public async Task<ActionResult<FlightDto>> GetFlightByNumber(string flightNumber)
     {
         var flight = await _flightService.GetFlightByNumberAsync(flightNumber);
         if (flight == null)
         {
             return NotFound();
         }
-        return Ok(flight);
+    
+        var flightDto = new FlightDto
+        {
+            FlightNumber = flight.FlightNumber,
+            FromAirport = flight.FromAirport?.Name ?? "Unknown",
+            ToAirport = flight.ToAirport?.Name ?? "Unknown",
+            Date = flight.DateTime,
+            Price = flight.Price
+        };
+    
+        return Ok(flightDto);
     }
 
     [HttpPost]
@@ -70,7 +79,7 @@ public class FlightsController : ControllerBase
         try
         {
             var createdFlight = await _flightService.CreateFlightAsync(flight);
-            return CreatedAtAction(nameof(GetFlight), new { id = createdFlight.Id }, createdFlight);
+            return CreatedAtAction(nameof(CreateFlight), new { id = createdFlight.Id }, createdFlight);
         }
         catch (Exception ex)
         {
