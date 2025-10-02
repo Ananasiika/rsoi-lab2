@@ -55,6 +55,49 @@ jobs:
         env:
           WAIT_PORTS: 8080,8070,8060,8050
 
+      - name: Check Tests
+        timeout-minutes: 5
+        run: |
+          # Test Gateway endpoints
+          echo "3. Testing Gateway endpoints:"
+          
+          # 3.1 Get flights via Gateway
+          echo "3.1 Get flights via Gateway:"
+          curl -v "http://localhost:8080/api/v1/flights?page=1&size=10" || echo "FAILED"
+          
+          # 3.2 Get privilege info
+          echo "3.2 Get privilege info:"
+          curl -v -H "X-User-Name: Test Max" "http://localhost:8080/api/v1/privilege" || echo "FAILED"
+          
+          # 3.3 Purchase ticket (main test)
+          echo "3.3 Purchase ticket:"
+          curl -v -X POST \
+            -H "X-User-Name: Test Max" \
+            -H "Content-Type: application/json" \
+            -d '{"flightNumber":"AFL031","price":1500,"paidFromBalance":false}' \
+            "http://localhost:8080/api/v1/tickets" || echo "FAILED"
+          
+          # Test direct service endpoints
+          echo "4. Testing direct service endpoints:"
+          
+          # Flight Service
+          echo "4.1 Flight Service direct:"
+          curl -v "http://localhost:8060/api/v1/flights?page=1&size=10" || echo "FAILED"
+          
+          # Ticket Service
+          echo "4.2 Ticket Service - get tickets:"
+          curl -v -H "X-User-Name: Test Max" "http://localhost:8070/api/v1/tickets" || echo "FAILED"
+          
+          # Bonus Service  
+          echo "4.3 Bonus Service - get privilege:"
+          curl -v -H "X-User-Name: Test Max" "http://localhost:8050/api/v1/privilege" || echo "FAILED"
+          
+          echo "=== Database check ==="
+          # Check if databases are initialized
+          docker exec postgres psql -U postgres -d flights -c "SELECT * FROM flight;"
+          docker exec postgres psql -U postgres -d tickets -c "SELECT * FROM ticket;"
+          docker exec postgres psql -U postgres -d privileges -c "SELECT * FROM privilege;"
+
       - name: Run API Tests
         uses: matt-ball/newman-action@master
         with:
