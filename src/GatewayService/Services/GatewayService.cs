@@ -36,7 +36,7 @@ public class GatewayService : IGatewayService
         return new UserInfoResponse
         {
             Tickets = tickets,
-            Privilege = new UserPrivilegeInfo
+            Privilege = new PrivilegeShortInfo
             {
                 Balance = privilege?.Balance ?? 0,
                 Status = privilege?.Status ?? "BRONZE"
@@ -62,9 +62,9 @@ public class GatewayService : IGatewayService
                 {
                     TicketUid = ticket.TicketUid,
                     FlightNumber = ticket.FlightNumber,
-                    FromAirport = $"{flight.FromAirport.City} {flight.FromAirport.Name}",
-                    ToAirport = $"{flight.ToAirport.City} {flight.ToAirport.Name}",
-                    Date = flight.DateTime,
+                    FromAirport = $"{flight.FromAirport} {flight.FromAirport}",
+                    ToAirport = $"{flight.ToAirport} {flight.ToAirport}",
+                    Date = flight.Date,
                     Price = ticket.Price,
                     Status = ticket.Status
                 };
@@ -105,9 +105,9 @@ public class GatewayService : IGatewayService
         {
             TicketUid = ticket.TicketUid,
             FlightNumber = ticket.FlightNumber,
-            FromAirport = $"{flight.FromAirport.City} {flight.FromAirport.Name}",
-            ToAirport = $"{flight.ToAirport.City} {flight.ToAirport.Name}",
-            Date = flight.DateTime,
+            FromAirport = $"{flight.FromAirport} {flight.FromAirport}",
+            ToAirport = $"{flight.ToAirport} {flight.ToAirport}",
+            Date = flight.Date,
             Price = ticket.Price,
             Status = ticket.Status
         };
@@ -115,50 +115,69 @@ public class GatewayService : IGatewayService
 
     public async Task<TicketPurchaseResponse?> PurchaseTicketAsync(string username, TicketPurchaseRequest request)
     {
-        // 1. Получить информацию о полете
-        var flight = await _flightClient.GetFlightByNumberAsync(request.FlightNumber);
-        if (flight == null)
+        try
         {
-            _logger.LogWarning("Flight not found: {FlightNumber}", request.FlightNumber);
+            _logger.LogInformation("Starting ticket purchase for user: {Username}, flight: {FlightNumber}", 
+                username, request.FlightNumber);
+
+            // 1. Получить информацию о полете
+            var flight = await _flightClient.GetFlightByNumberAsync(request.FlightNumber);
+            if (flight == null)
+            {
+                _logger.LogWarning("Flight not found: {FlightNumber}", request.FlightNumber);
+                return null;
+            }
+
+            // 2. Получить информацию о бонусах
+            var privilegeInfo = await _bonusClient.GetPrivilegeShortInfoAsync(username);
+        
+            // 3. Рассчитать суммы оплаты и бонусы
+            int paidByMoney, paidByBonuses, bonusToAdd;
+            CalculatePaidAmounts(request, privilegeInfo, out paidByBonuses, out paidByMoney, out bonusToAdd);
+
+            // 4. Создать запрос на покупку билета в TicketService
+            var ticketPurchaseRequest = new TicketPurchaseRequest
+            {
+                FlightNumber = request.FlightNumber,
+                Price = request.Price,
+                PaidFromBalance = request.PaidFromBalance
+            };
+
+            var ticketResponse = await _ticketClient.PurchaseTicketAsync(username, ticketPurchaseRequest);
+            if (ticketResponse == null)
+            {
+                _logger.LogWarning("Failed to create ticket in TicketService");
+                return null;
+            }
+
+            // 5. Обновить бонусную систему
+            await _bonusClient.UpdatePrivilegeAfterPurchase(
+                username, request, ticketResponse.TicketUid, 
+                paidByBonuses, paidByMoney, bonusToAdd);
+
+            // 6. Получить обновленную информацию о бонусах
+            var updatedPrivilege = await _bonusClient.GetPrivilegeShortInfoAsync(username);
+
+            // 7. Вернуть ответ в ожидаемом формате
+            return new TicketPurchaseResponse
+            {
+                TicketUid = ticketResponse.TicketUid,
+                FlightNumber = flight.FlightNumber,
+                FromAirport = flight.FromAirport,
+                ToAirport = flight.ToAirport,
+                Date = flight.Date,
+                Price = request.Price,
+                PaidByMoney = paidByMoney,
+                PaidByBonuses = paidByBonuses,
+                Status = "PAID",
+                Privilege = updatedPrivilege ?? new PrivilegeShortInfo()
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error purchasing ticket for user: {Username}", username);
             return null;
         }
-
-        // 2. Получить информацию о бонусах
-        var privilegeInfo = await _bonusClient.GetPrivilegeShortInfoAsync(username);
-    
-        // 3. Рассчитать суммы оплаты и бонусы
-        int paidByMoney, paidByBonuses, bonusToAdd;
-        CalculatePaidAmounts(request, privilegeInfo, out paidByBonuses, out paidByMoney, out bonusToAdd);
-
-        // 4. Создать запрос на покупку билета
-        var ticketResponse = await _ticketClient.PurchaseTicketAsync(username, request);
-        if (ticketResponse == null)
-        {
-            return null;
-        }
-
-        // 5. Обновить бонусную систему
-        await _bonusClient.UpdatePrivilegeAfterPurchase(
-            username, request, ticketResponse.TicketUid, 
-            paidByBonuses, paidByMoney, bonusToAdd);
-
-        // 6. Получить обновленную информацию о бонусах
-        var updatedPrivilege = await _bonusClient.GetPrivilegeShortInfoAsync(username);
-
-        // 7. Вернуть ответ в ожидаемом формате
-        return new TicketPurchaseResponse
-        {
-            TicketUid = ticketResponse.TicketUid,
-            FlightNumber = flight.FlightNumber,
-            FromAirport = flight.FromAirport.Name,
-            ToAirport = flight.ToAirport.Name,
-            Date = flight.DateTime,
-            Price = request.Price,
-            PaidByMoney = paidByMoney,
-            PaidByBonuses = paidByBonuses,
-            Status = "PAID",
-            Privilege = updatedPrivilege ?? new PrivilegeShortInfo()
-        };
     }
 
     public async Task<bool> CancelTicketAsync(string username, Guid ticketUid)

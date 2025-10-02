@@ -30,16 +30,52 @@ public class TicketsController : ControllerBase
         }
 
         var tickets = await _ticketService.GetUserTicketsAsync(username);
-        // Здесь должен быть вызов к FlightService для получения деталей рейса (FromAirport, ToAirport, Date)
-        // Пока возвращаем только данные из билетов
+    
+        // Возвращаем полный формат как ожидает Gateway
         var response = tickets.Select(t => new
         {
             t.TicketUid,
             t.FlightNumber,
+            FromAirport = "Unknown", // Gateway добавит правильные данные
+            ToAirport = "Unknown",   // Gateway добавит правильные данные  
+            Date = DateTime.MinValue, // Gateway добавит правильные данные
             t.Price,
             Status = t.Status.ToString()
         });
+    
         return Ok(response);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> PurchaseTicket([FromBody] TicketPurchaseRequestDto request, [FromHeader(Name = "X-User-Name")] string username)
+    {
+        if (string.IsNullOrEmpty(username))
+        {
+            return BadRequest("Username is required");
+        }
+
+        try
+        {
+            var ticket = await _ticketService.CreateTicketAsync(request, username);
+        
+            // Возвращаем полный ответ с TicketUid
+            var response = new
+            {
+                TicketUid = ticket.TicketUid,
+                FlightNumber = request.FlightNumber,
+                FromAirport = "Unknown",
+                ToAirport = "Unknown", 
+                Date = DateTime.MinValue,
+                Price = request.Price,
+                Status = ticket.Status.ToString()
+            };
+        
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
     }
 
     [HttpGet("{ticketUid}")]
@@ -59,33 +95,6 @@ public class TicketsController : ControllerBase
             Status = ticket.Status.ToString()
         };
         return Ok(response);
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> PurchaseTicket([FromBody] TicketPurchaseRequestDto request, [FromHeader(Name = "X-User-Name")] string username)
-    {
-        if (string.IsNullOrEmpty(username))
-        {
-            return BadRequest("Username is required");
-        }
-
-        try
-        {
-            var ticket = await _ticketService.CreateTicketAsync(request, username);
-            // Аналогично, нужно добавить информацию о рейсе
-            var response = new
-            {
-                ticket.TicketUid,
-                request.FlightNumber,
-                request.Price,
-                Status = ticket.Status.ToString()
-            };
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
-        }
     }
 
     [HttpDelete("{ticketUid}")]
