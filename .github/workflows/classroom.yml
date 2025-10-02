@@ -62,13 +62,7 @@ jobs:
           environment: v1/postman/environment.json
           delayRequest: 100
           reporters: '[ "cli" ]'
-
-      - name: Show Docker Logs on Completion
-        if: always()  # Этот шаг выполнится ВСЕГДА, даже если предыдущие упали
-        run: |
-          docker compose ps
-          docker compose logs 
-
+          
       - uses: education/autograding@v1
         id: autograder
         continue-on-error: true
